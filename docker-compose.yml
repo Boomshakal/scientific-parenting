@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: registry.cn-hangzhou.aliyuncs.com/registry_public/scientific-parenting:latest
     container_name: scientific-parenting
     ports:
       - "3000:3000"
