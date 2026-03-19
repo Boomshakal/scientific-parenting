@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Baby {
+  id        String   @id @default(cuid())
+  name      String
+  birthday  String
+  gender    String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  growthRecords    GrowthRecord[]
+  feedingRecords   FeedingRecord[]
+  sleepRecords     SleepRecord[]
+  milestones       Milestone[]
+  healthRecords    HealthRecord[]
+  moodRecords      MoodRecord[]
+  educationRecords EducationRecord[]
+}
+
+model GrowthRecord {
+  id        String   @id @default(cuid())
+  date      String
+  height    Float
+  weight    Float
+  headCirc  Float
+  notes     String?
+  babyId    String
+  baby      Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([babyId])
+  @@index([date])
+}
+
+model FeedingRecord {
+  id        String   @id @default(cuid())
+  date      String
+  time      String
+  type      String
+  amount    Int?
+  food      String?
+  duration  Int?
+  notes     String?
+  babyId    String
+  baby      Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([babyId])
+  @@index([date])
+}
+
+model SleepRecord {
+  id        String   @id @default(cuid())
+  date      String
+  startTime String
+  endTime   String
+  duration  Int
+  quality   String
+  notes     String?
+  babyId    String
+  baby      Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([babyId])
+  @@index([date])
+}
+
+model Milestone {
+  id           String   @id @default(cuid())
+  type         String
+  achievedDate String
+  notes        String?
+  babyId       String
+  baby         Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([babyId])
+  @@index([achievedDate])
+}
+
+model HealthRecord {
+  id        String   @id @default(cuid())
+  date      String
+  type      String
+  title     String
+  details   String
+  nextDate  String?
+  notes     String?
+  babyId    String
+  baby      Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([babyId])
+  @@index([date])
+}
+
+model MoodRecord {
+  id        String   @id @default(cuid())
+  date      String
+  time      String
+  mood      String
+  notes     String?
+  babyId    String
+  baby      Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([babyId])
+  @@index([date])
+}
+
+model EducationRecord {
+  id          String   @id @default(cuid())
+  date        String
+  time        String
+  type        String
+  duration    Int
+  description String?
+  babyId      String
+  baby        Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([babyId])
+  @@index([date])
+}
