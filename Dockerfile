@@ -1,23 +1,26 @@
-FROM node:20-slim AS deps
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
-
-FROM node:20-slim AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN apt-get update -y && apt-get install -y openssl
+RUN apk add --no-cache openssl
 RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-FROM node:20-slim AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-RUN groupadd --system --gid 1001 nodejs
-RUN useradd --system --uid 1001 --gid nodejs nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 --ingroup nodejs --home /home/nextjs nextjs
+RUN apk add --no-cache openssl curl
 
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
@@ -39,4 +42,4 @@ USER nextjs
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/ || exit 1
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node_modules/.bin/prisma db push --skip-generate && node server.js"]
