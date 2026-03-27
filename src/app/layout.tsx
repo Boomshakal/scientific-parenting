@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Header, BottomNav } from "@/components/layout/Header";
+import { ToastContainer } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
   title: "育娃记录 - 记录成长每一刻",
@@ -22,6 +23,7 @@ export default function RootLayout({
           </div>
         </main>
         <BottomNav />
+        <ToastContainer />
       </body>
     </html>
   );

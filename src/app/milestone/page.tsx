@@ -11,7 +11,7 @@ import { MILESTONE_TYPES } from '@/types';
 import { format } from 'date-fns';
 
 export default function MilestonePage() {
-  const { milestones, loading, fetchMilestones, addMilestone, deleteMilestone } = useMilestoneStore();
+  const { records: milestones, loading, fetchRecords: fetchMilestones, addRecord: addMilestone, deleteRecord: deleteMilestone } = useMilestoneStore();
 
   useEffect(() => {
     fetchMilestones();

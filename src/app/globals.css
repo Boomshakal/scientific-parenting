@@ -164,3 +164,12 @@ body {
   background: linear-gradient(90deg, #f9a8d4, #f472b6);
   border-radius: 6px;
 }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.25s ease-out;
+}

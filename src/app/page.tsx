@@ -21,7 +21,7 @@ export default function HomePage() {
   const { records: feedingRecords, loading: feedingLoading, fetchRecords: fetchFeeding } = useFeedingStore();
   const { records: sleepRecords, loading: sleepLoading, fetchRecords: fetchSleep } = useSleepStore();
   const { records: growthRecords, loading: growthLoading, fetchRecords: fetchGrowth } = useGrowthStore();
-  const { milestones, loading: milestoneLoading, fetchMilestones } = useMilestoneStore();
+  const { records: milestones, loading: milestoneLoading, fetchRecords: fetchMilestones } = useMilestoneStore();
   const { records: educationRecords, loading: educationLoading, fetchRecords: fetchEducation } = useEducationStore();
 
   const loading = babyLoading || feedingLoading || sleepLoading || growthLoading || milestoneLoading || educationLoading;
