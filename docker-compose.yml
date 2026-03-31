@@ -13,6 +13,10 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/dev.db
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_AUTHENTIK_ID=${AUTH_AUTHENTIK_ID}
+      - AUTH_AUTHENTIK_SECRET=${AUTH_AUTHENTIK_SECRET}
+      - AUTH_AUTHENTIK_ISSUER=${AUTH_AUTHENTIK_ISSUER}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
