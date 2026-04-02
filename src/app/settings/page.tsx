@@ -5,7 +5,7 @@ import { useBabyStore } from '@/stores';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PageHeader } from '@/components/layout/Header';
-import { format } from 'date-fns';
+import { signOut } from 'next-auth/react';
 
 const avatars = [
   { emoji: '👦', label: '男孩1' },
@@ -173,6 +173,16 @@ export default function SettingsPage() {
             <p>设置宝宝信息后，首页将显示宝宝的年龄和相关信息。出生日期用于计算月龄。</p>
           </div>
         </div>
+      </div>
+
+      {/* Logout */}
+      <div className="mt-8">
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="w-full py-3 px-6 rounded-2xl border-2 border-red-200 text-red-500 font-semibold hover:bg-red-50 hover:border-red-300 transition-all"
+        >
+          🚪 退出登录
+        </button>
       </div>
     </div>
   );
