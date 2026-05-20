@@ -11,6 +11,7 @@ const navItems = [
   { href: '/sleep', label: '睡眠', emoji: '😴' },
   { href: '/milestone', label: '里程碑', emoji: '🎉' },
   { href: '/health', label: '健康', emoji: '🏥' },
+  { href: '/illness', label: '生病', emoji: '🤒' },
   { href: '/mood', label: '情绪', emoji: '😊' },
   { href: '/education', label: '早教', emoji: '📚' },
 ];
@@ -79,6 +80,7 @@ export function BottomNav() {
     { href: '/sleep', label: '睡眠', emoji: '😴' },
     { href: '/growth', label: '生长', emoji: '📏' },
     { href: '/health', label: '健康', emoji: '🏥' },
+    { href: '/illness', label: '生病', emoji: '🤒' },
   ];
 
   return (

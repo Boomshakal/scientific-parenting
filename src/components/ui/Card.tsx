@@ -63,3 +63,13 @@ export function StatCard({ emoji, value, label, color = 'pink' }: StatCardProps)
     </div>
   );
 }
+
+interface CardContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+/** Content wrapper inside Card with default padding */
+export function CardContent({ children, className = '' }: CardContentProps) {
+  return <div className={`p-6 ${className}`}>{children}</div>;
+}

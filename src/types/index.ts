@@ -118,3 +118,81 @@ export interface DailySummary {
   moods: MoodRecord['mood'][];
   activities: number;
 }
+
+// -- Illness Record Types --
+
+export type TemperatureMethod = 'oral' | 'axillary' | 'ear' | 'temporal';
+
+export type AppetiteLevel = 'good' | 'fair' | 'poor';
+
+export type SleepQualityLevel = 'good' | 'fair' | 'poor';
+
+export type MoodLevel = 'normal' | 'irritable' | 'lethargic';
+
+export type MedicationRoute = 'oral' | 'topical' | 'injection';
+
+/** 一次完整的生病过程 */
+export interface IllnessEpisode {
+  id: string;
+  start_date: string; // date string (YYYY-MM-DD)
+  end_date?: string; // date string, optional
+  title: string; // e.g., "流感发烧"
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 单次观察记录 */
+export interface IllnessRecord {
+  id: string;
+  episode_id: string;
+  recorded_at: string; // ISO datetime
+  symptoms: string[];
+  temperature?: number; // Celsius, 35.0-42.0
+  temperature_method?: TemperatureMethod;
+  appetite?: AppetiteLevel;
+  sleep_quality?: SleepQualityLevel;
+  mood?: MoodLevel;
+  notes?: string;
+}
+
+/** 用药记录 */
+export interface Medication {
+  id: string;
+  episode_id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  route?: MedicationRoute;
+  start_date: string;
+  end_date?: string;
+  prescribed_by?: string;
+  notes?: string;
+}
+
+/** 就医记录 */
+export interface DoctorVisit {
+  id: string;
+  episode_id: string;
+  visit_date: string; // ISO datetime
+  hospital?: string;
+  department?: string;
+  doctor?: string;
+  diagnosis?: string;
+  prescription?: string;
+  advice?: string;
+  attachments?: string[]; // URLs or file paths
+}
+
+/** 带统计信息的生病事件概览 */
+export interface IllnessEpisodeWithStats extends IllnessEpisode {
+  record_count: number;
+  max_temperature?: number;
+}
+
+/** 带所有关联数据的详细事件 */
+export interface IllnessEpisodeDetail extends IllnessEpisode {
+  records: IllnessRecord[];
+  medications: Medication[];
+  doctor_visits: DoctorVisit[];
+}
