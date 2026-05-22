@@ -147,7 +147,7 @@ export interface IllnessRecord {
   id: string;
   episode_id: string;
   recorded_at: string; // ISO datetime
-  symptoms: string[];
+  symptoms: string | string[]; // Prisma returns string for SQLite JSON, but we use string[] in UI
   temperature?: number; // Celsius, 35.0-42.0
   temperature_method?: TemperatureMethod;
   appetite?: AppetiteLevel;
@@ -181,7 +181,7 @@ export interface DoctorVisit {
   diagnosis?: string;
   prescription?: string;
   advice?: string;
-  attachments?: string[]; // URLs or file paths
+  attachments?: string | string[]; // Prisma returns string for SQLite JSON, but we use string[] in UI
 }
 
 /** 带统计信息的生病事件概览 */

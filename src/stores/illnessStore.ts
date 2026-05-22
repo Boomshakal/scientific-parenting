@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { useToastStore } from './toastStore';
-import { db } from '@/lib/db';
 import {
   IllnessEpisode,
   IllnessEpisodeWithStats,
@@ -46,7 +45,9 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
   fetchEpisodes: async () => {
     set({ loading: true, error: null });
     try {
-      const episodes = await db.getEpisodesWithStats();
+      const res = await fetch('/api/illness');
+      if (!res.ok) throw new Error(`Failed to fetch episodes: ${res.status}`);
+      const episodes = await res.json();
       set({ episodes, loading: false });
     } catch (error) {
       console.error('Failed to fetch episodes:', error);
@@ -58,12 +59,16 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
   fetchEpisode: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      const episode = await db.getEpisodeDetail(id);
-      if (episode) {
-        set({ currentEpisode: episode, loading: false });
-      } else {
-        set({ error: '未找到该记录', loading: false });
+      const res = await fetch(`/api/illness/${id}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          set({ currentEpisode: null, loading: false });
+          return;
+        }
+        throw new Error(`Failed to fetch episode: ${res.status}`);
       }
+      const episode = await res.json();
+      set({ currentEpisode: episode, loading: false });
     } catch (error) {
       console.error('Failed to fetch episode:', error);
       useToastStore.getState().show('获取详情失败', 'error');
@@ -73,10 +78,16 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   createEpisode: async (episodeData) => {
     try {
-      const id = await db.addEpisode(episodeData);
+      const res = await fetch('/api/illness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(episodeData),
+      });
+      if (!res.ok) throw new Error(`Failed to create episode: ${res.status}`);
+      const episode = await res.json();
       await get().fetchEpisodes();
       useToastStore.getState().show('创建成功', 'success');
-      return id;
+      return episode.id;
     } catch (error) {
       console.error('Failed to create episode:', error);
       useToastStore.getState().show('创建失败', 'error');
@@ -86,7 +97,12 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   updateEpisode: async (id, updates) => {
     try {
-      await db.updateEpisode(id, updates);
+      const res = await fetch(`/api/illness/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error(`Failed to update episode: ${res.status}`);
       await get().fetchEpisodes();
       // Refresh currentEpisode if it's the one being updated
       const { currentEpisode } = get();
@@ -106,7 +122,8 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
       return;
     }
     try {
-      await db.deleteEpisode(id);
+      const res = await fetch(`/api/illness/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Failed to delete episode: ${res.status}`);
       await get().fetchEpisodes();
       useToastStore.getState().show('删除成功', 'success');
     } catch (error) {
@@ -118,11 +135,17 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   addRecord: async (episodeId, recordData) => {
     try {
-      const id = await db.addRecord({ ...recordData, episode_id: episodeId });
+      const res = await fetch(`/api/illness/${episodeId}/records`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recordData),
+      });
+      if (!res.ok) throw new Error(`Failed to add record: ${res.status}`);
+      const record = await res.json();
       await get().fetchEpisode(episodeId);
       await get().fetchEpisodes(); // to update stats
       useToastStore.getState().show('记录添加成功', 'success');
-      return id;
+      return record.id;
     } catch (error) {
       console.error('Failed to add record:', error);
       useToastStore.getState().show('添加记录失败', 'error');
@@ -132,7 +155,12 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   updateRecord: async (episodeId, recordId, updates) => {
     try {
-      await db.updateRecord(recordId, updates);
+      const res = await fetch(`/api/illness/${episodeId}/records/${recordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error(`Failed to update record: ${res.status}`);
       await get().fetchEpisode(episodeId);
       await get().fetchEpisodes();
       useToastStore.getState().show('记录更新成功', 'success');
@@ -145,7 +173,10 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   deleteRecord: async (episodeId, recordId) => {
     try {
-      await db.deleteRecord(recordId);
+      const res = await fetch(`/api/illness/${episodeId}/records/${recordId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Failed to delete record: ${res.status}`);
       await get().fetchEpisode(episodeId);
       await get().fetchEpisodes();
       useToastStore.getState().show('记录已删除', 'success');
@@ -158,10 +189,16 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   addMedication: async (episodeId, medicationData) => {
     try {
-      const id = await db.addMedication({ ...medicationData, episode_id: episodeId });
+      const res = await fetch(`/api/illness/${episodeId}/medications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(medicationData),
+      });
+      if (!res.ok) throw new Error(`Failed to add medication: ${res.status}`);
+      const med = await res.json();
       await get().fetchEpisode(episodeId);
       useToastStore.getState().show('用药记录添加成功', 'success');
-      return id;
+      return med.id;
     } catch (error) {
       console.error('Failed to add medication:', error);
       useToastStore.getState().show('添加用药记录失败', 'error');
@@ -171,7 +208,12 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   updateMedication: async (episodeId, medId, updates) => {
     try {
-      await db.updateMedication(medId, updates);
+      const res = await fetch(`/api/illness/${episodeId}/medications/${medId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error(`Failed to update medication: ${res.status}`);
       await get().fetchEpisode(episodeId);
       useToastStore.getState().show('用药记录更新成功', 'success');
     } catch (error) {
@@ -183,7 +225,10 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   deleteMedication: async (episodeId, medId) => {
     try {
-      await db.deleteMedication(medId);
+      const res = await fetch(`/api/illness/${episodeId}/medications/${medId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Failed to delete medication: ${res.status}`);
       await get().fetchEpisode(episodeId);
       useToastStore.getState().show('用药记录已删除', 'success');
     } catch (error) {
@@ -195,10 +240,16 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   addDoctorVisit: async (episodeId, visitData) => {
     try {
-      const id = await db.addDoctorVisit({ ...visitData, episode_id: episodeId });
+      const res = await fetch(`/api/illness/${episodeId}/visits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(visitData),
+      });
+      if (!res.ok) throw new Error(`Failed to add doctor visit: ${res.status}`);
+      const visit = await res.json();
       await get().fetchEpisode(episodeId);
       useToastStore.getState().show('就医记录添加成功', 'success');
-      return id;
+      return visit.id;
     } catch (error) {
       console.error('Failed to add doctor visit:', error);
       useToastStore.getState().show('添加就医记录失败', 'error');
@@ -208,7 +259,12 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   updateDoctorVisit: async (episodeId, visitId, updates) => {
     try {
-      await db.updateDoctorVisit(visitId, updates);
+      const res = await fetch(`/api/illness/${episodeId}/visits/${visitId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error(`Failed to update doctor visit: ${res.status}`);
       await get().fetchEpisode(episodeId);
       useToastStore.getState().show('就医记录更新成功', 'success');
     } catch (error) {
@@ -220,7 +276,10 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
 
   deleteDoctorVisit: async (episodeId, visitId) => {
     try {
-      await db.deleteDoctorVisit(visitId);
+      const res = await fetch(`/api/illness/${episodeId}/visits/${visitId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Failed to delete doctor visit: ${res.status}`);
       await get().fetchEpisode(episodeId);
       useToastStore.getState().show('就医记录已删除', 'success');
     } catch (error) {

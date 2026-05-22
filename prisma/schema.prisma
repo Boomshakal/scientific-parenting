@@ -74,6 +74,7 @@ model Baby {
   healthRecords    HealthRecord[]
   moodRecords      MoodRecord[]
   educationRecords EducationRecord[]
+  illnessEpisodes  IllnessEpisode[]
 }
 
 model GrowthRecord {
@@ -180,4 +181,77 @@ model EducationRecord {
 
   @@index([babyId])
   @@index([date])
+}
+
+// Illness tracking models
+model IllnessEpisode {
+  id          String   @id @default(cuid())
+  title       String
+  start_date  String
+  end_date    String?
+  description String?
+  babyId      String
+  baby        Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  records     IllnessRecord[]
+  medications Medication[]
+  doctorVisits DoctorVisit[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([babyId])
+  @@index([start_date])
+}
+
+model IllnessRecord {
+  id              String   @id @default(cuid())
+  episodeId       String
+  recorded_at     String  // ISO datetime
+  symptoms        String  // JSON string of symptom strings
+  temperature     Float?   // Celsius, 35.0-42.0
+  temperature_method String? // oral, axillary, ear, temporal
+  appetite        String?  // good, fair, poor
+  sleep_quality   String?  // good, fair, poor
+  mood            String?  // normal, irritable, lethargic
+  notes           String?
+  episode         IllnessEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@index([episodeId])
+  @@index([recorded_at])
+}
+
+model Medication {
+  id              String   @id @default(cuid())
+  episodeId       String
+  name            String
+  dosage          String
+  frequency       String
+  route           String?  // oral, topical, injection
+  start_date      String
+  end_date        String?
+  prescribed_by   String?
+  notes           String?
+  episode         IllnessEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@index([episodeId])
+  @@index([start_date])
+}
+
+model DoctorVisit {
+  id              String   @id @default(cuid())
+  episodeId       String
+  visit_date      String  // ISO datetime
+  hospital        String?
+  department      String?
+  doctor          String?
+  diagnosis       String?
+  prescription    String?
+  advice          String?
+  attachments     String? // JSON string of URLs or file paths
+  episode         IllnessEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@index([episodeId])
+  @@index([visit_date])
 }

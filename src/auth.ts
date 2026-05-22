@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import Authentik from "next-auth/providers/authentik"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
@@ -45,7 +44,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }
       },
     }),
-    Authentik,
   ],
   callbacks: {
     ...authConfig.callbacks,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, use } from 'react';
 import { useIllnessStore } from '@/stores/illnessStore';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -93,7 +93,7 @@ const emptyVisit: VisitForm = {
   attachments: '',
 };
 
-export default function IllnessDetailPage({ params }: { params: { id: string } }) {
+export default function IllnessDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { currentEpisode, loading, fetchEpisode, addRecord, updateRecord, deleteRecord, addMedication, updateMedication, deleteMedication, addDoctorVisit, updateDoctorVisit, deleteDoctorVisit, updateEpisode } = useIllnessStore();
   const [activeTab, setActiveTab] = useState<'records' | 'medications' | 'visits'>('records');
   const [modalType, setModalType] = useState<ModalType>(null);
@@ -108,9 +108,11 @@ export default function IllnessDetailPage({ params }: { params: { id: string } }
   const [editEndDate, setEditEndDate] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
+  const resolvedParams = use(params);
+
   useEffect(() => {
-    fetchEpisode(params.id);
-  }, [fetchEpisode, params.id]);
+    fetchEpisode(resolvedParams.id);
+  }, [fetchEpisode, resolvedParams.id]);
 
   const episode = currentEpisode;
 
@@ -134,9 +136,10 @@ export default function IllnessDetailPage({ params }: { params: { id: string } }
   const openRecordModal = useCallback((record?: IllnessRecord) => {
     if (record) {
       setEditingRecordId(record.id);
+      const symptomsArray = Array.isArray(record.symptoms) ? record.symptoms : [record.symptoms].filter(Boolean);
       setRecordForm({
         recorded_at: record.recorded_at.slice(0, 16), // datetime-local format
-        symptoms: record.symptoms.join(', '),
+        symptoms: symptomsArray.join(', '),
         temperature: record.temperature?.toString() || '',
         temperature_method: record.temperature_method || 'axillary',
         appetite: record.appetite || 'good',
@@ -174,6 +177,7 @@ export default function IllnessDetailPage({ params }: { params: { id: string } }
   const openVisitModal = useCallback((visit?: DoctorVisit) => {
     if (visit) {
       setEditingVisitId(visit.id);
+      const attachmentsArray = Array.isArray(visit.attachments) ? visit.attachments : visit.attachments ? [visit.attachments] : [];
       setVisitForm({
         visit_date: visit.visit_date.slice(0, 16),
         hospital: visit.hospital || '',
@@ -182,7 +186,7 @@ export default function IllnessDetailPage({ params }: { params: { id: string } }
         diagnosis: visit.diagnosis || '',
         prescription: visit.prescription || '',
         advice: visit.advice || '',
-        attachments: visit.attachments?.join(', ') || '',
+        attachments: attachmentsArray.join(', '),
       });
     } else {
       setEditingVisitId(null);
@@ -420,7 +424,7 @@ export default function IllnessDetailPage({ params }: { params: { id: string } }
                             {format(parseISO(record.recorded_at), 'yyyy-MM-dd HH:mm', { locale: zhCN })}
                           </div>
                           <div className="flex flex-wrap gap-2 mb-2">
-                            {record.symptoms.map((symptom, idx) => (
+                            {(Array.isArray(record.symptoms) ? record.symptoms : [record.symptoms].filter(Boolean)).map((symptom: string, idx: number) => (
                               <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">{symptom}</span>
                             ))}
                           </div>
@@ -519,10 +523,10 @@ export default function IllnessDetailPage({ params }: { params: { id: string } }
                           {visit.diagnosis && <div className="text-sm font-medium text-red-600 mb-1">诊断: {visit.diagnosis}</div>}
                           {visit.prescription && <div className="text-sm text-gray-600 mb-1">💊 处方: {visit.prescription}</div>}
                           {visit.advice && <div className="text-sm text-gray-600 mb-1">💡 建议: {visit.advice}</div>}
-                          {visit.attachments && visit.attachments.length > 0 && (
+                          {visit.attachments && Array.isArray(visit.attachments) && visit.attachments.length > 0 && (
                             <div className="text-sm text-gray-500">
-                              📎 附件: {visit.attachments.map((url, i) => (
-                                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">查看{i < visit.attachments!.length - 1 ? ',' : ''}</a>
+                              📎 附件: {visit.attachments.map((url: string, i: number) => (
+                                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">查看{i < (visit.attachments?.length ?? 0) - 1 ? ',' : ''}</a>
                               ))}
                             </div>
                           )}
