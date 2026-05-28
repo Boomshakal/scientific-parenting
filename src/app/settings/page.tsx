@@ -5,6 +5,7 @@ import { useBabyStore } from '@/stores';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PageHeader } from '@/components/layout/Header';
+import { BabyTabs } from '@/components/baby/BabyTabs';
 import { signOut } from 'next-auth/react';
 
 const avatars = [
@@ -80,6 +81,11 @@ export default function SettingsPage() {
   return (
     <div className="max-w-md mx-auto">
       <PageHeader title="宝宝设置" emoji="⚙️" back />
+
+      {/* Baby Tabs */}
+      <div className="mb-6">
+        <BabyTabs />
+      </div>
 
       {/* Avatar Section */}
       <div className="bg-white rounded-3xl p-6 mb-6 border-2 border-pink-100 shadow-lg">
@@ -163,6 +169,17 @@ export default function SettingsPage() {
       >
         {saving ? '保存中...' : saved ? '✅ 保存成功' : '💾 保存设置'}
       </Button>
+
+      {/* Tips */}
+      <div className="mt-6 p-4 bg-blue-50 rounded-2xl border-2 border-blue-200">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">💡</span>
+          <div className="text-sm text-gray-600">
+            <p className="font-semibold mb-1">多宝宝管理</p>
+            <p>点击上方的宝宝页签可以切换不同宝宝，点击"➕ 新增"按钮可以创建新的宝宝记录。每个宝宝的信息独立保存。</p>
+          </div>
+        </div>
+      </div>
 
       {/* Tips */}
       <div className="mt-6 p-4 bg-yellow-50 rounded-2xl border-2 border-yellow-200">

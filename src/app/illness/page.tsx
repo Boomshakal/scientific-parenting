@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useIllnessStore } from '@/stores/illnessStore';
+import { useBabyStore } from '@/stores';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, TextArea } from '@/components/ui/Input';
@@ -13,14 +14,30 @@ import { IllnessEpisodeWithStats } from '@/types';
 
 export default function IllnessPage() {
   const { episodes, loading, fetchEpisodes, createEpisode } = useIllnessStore();
+  const { currentBabyId, fetchBaby } = useBabyStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [description, setDescription] = useState('');
 
   useEffect(() => {
-    fetchEpisodes();
-  }, [fetchEpisodes]);
+    // Ensure we have the current baby selected, then fetch episodes for that baby
+    const init = async () => {
+      await fetchBaby();
+      const { currentBabyId } = useBabyStore.getState();
+      if (currentBabyId) {
+        await fetchEpisodes(currentBabyId);
+      }
+    };
+    init();
+  }, [fetchEpisodes, fetchBaby]);
+
+  // Re-fetch when currentBabyId changes (switching babies in settings)
+  useEffect(() => {
+    if (currentBabyId) {
+      fetchEpisodes(currentBabyId);
+    }
+  }, [currentBabyId, fetchEpisodes]);
 
   const openModal = useCallback(() => {
     setIsModalOpen(true);
@@ -38,17 +55,21 @@ export default function IllnessPage() {
       alert('请填写标题和开始日期');
       return;
     }
+    if (!currentBabyId) {
+      alert('请先选择宝宝');
+      return;
+    }
     try {
       await createEpisode({
         title: title.trim(),
         start_date: startDate,
         description: description.trim() || undefined,
-      });
+      }, currentBabyId);
       closeModal();
     } catch (error) {
       // Error already handled by store
     }
-  }, [title, startDate, description, createEpisode, closeModal]);
+  }, [title, startDate, description, createEpisode, closeModal, currentBabyId]);
 
   const renderEpisodeCard = (episode: IllnessEpisodeWithStats) => {
     const start = parseISO(episode.start_date);

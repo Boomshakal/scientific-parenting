@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGrowthStore } from '@/stores';
+import { useBabyStore } from '@/stores';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, TextArea } from '@/components/ui/Input';
@@ -11,10 +12,26 @@ import { format } from 'date-fns';
 
 export default function GrowthPage() {
   const { records, loading, fetchRecords, addRecord, deleteRecord } = useGrowthStore();
+  const { currentBabyId, fetchBaby } = useBabyStore();
 
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+    // Ensure we have the current baby selected, then fetch records for that baby
+    const init = async () => {
+      await fetchBaby(); // Ensure currentBabyId is set
+      const { currentBabyId } = useBabyStore.getState();
+      if (currentBabyId) {
+        await fetchRecords(currentBabyId);
+      }
+    };
+    init();
+  }, [fetchRecords, fetchBaby]);
+
+  // Re-fetch when currentBabyId changes (switching babies in settings)
+  useEffect(() => {
+    if (currentBabyId) {
+      fetchRecords(currentBabyId);
+    }
+  }, [currentBabyId, fetchRecords]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [height, setHeight] = useState('');
@@ -42,15 +59,19 @@ export default function GrowthPage() {
       alert('请填写身高、体重和头围');
       return;
     }
+    if (!currentBabyId) {
+      alert('请先选择宝宝');
+      return;
+    }
     addRecord({
       date,
       height: parseFloat(height),
       weight: parseFloat(weight),
       headCirc: parseFloat(headCirc),
       notes: notes || undefined,
-    });
+    }, currentBabyId);
     closeModal();
-  }, [date, height, weight, headCirc, notes, addRecord, closeModal]);
+  }, [date, height, weight, headCirc, notes, addRecord, closeModal, currentBabyId]);
 
   if (loading) {
     return (
@@ -111,7 +132,7 @@ export default function GrowthPage() {
                   )}
                 </div>
                 <button
-                  onClick={() => deleteRecord(record.id)}
+                  onClick={() => currentBabyId && deleteRecord(record.id, currentBabyId)}
                   className="text-gray-300 hover:text-red-400 transition-colors p-2"
                 >
                   🗑️

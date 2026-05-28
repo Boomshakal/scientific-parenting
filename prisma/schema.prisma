@@ -59,7 +59,7 @@ model VerificationToken {
 model Baby {
   id        String   @id @default(cuid())
   name      String
-  birthday  String
+  birthday  DateTime
   gender    String
   avatar    String?
   userId    String?

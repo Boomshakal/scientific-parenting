@@ -17,9 +17,9 @@ interface IllnessState {
 }
 
 interface IllnessActions {
-  fetchEpisodes: () => Promise<void>;
+  fetchEpisodes: (babyId?: string) => Promise<void>;
   fetchEpisode: (id: string) => Promise<void>;
-  createEpisode: (episode: Omit<IllnessEpisode, 'id' | 'created_at' | 'updated_at'>) => Promise<string>;
+  createEpisode: (episode: Omit<IllnessEpisode, 'id' | 'created_at' | 'updated_at'>, babyId?: string) => Promise<string>;
   updateEpisode: (id: string, updates: Partial<Omit<IllnessEpisode, 'id' | 'created_at'>>) => Promise<void>;
   deleteEpisode: (id: string) => Promise<void>;
   addRecord: (episodeId: string, record: Omit<IllnessRecord, 'id' | 'episode_id'>) => Promise<string>;
@@ -42,10 +42,14 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
   loading: false,
   error: null,
 
-  fetchEpisodes: async () => {
+  fetchEpisodes: async (babyId?: string) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/illness');
+      let url = '/api/illness';
+      if (babyId) {
+        url += `?babyId=${encodeURIComponent(babyId)}`;
+      }
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to fetch episodes: ${res.status}`);
       const episodes = await res.json();
       set({ episodes, loading: false });
@@ -76,16 +80,20 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
     }
   },
 
-  createEpisode: async (episodeData) => {
+  createEpisode: async (episodeData, babyId?: string) => {
     try {
-      const res = await fetch('/api/illness', {
+      let url = '/api/illness';
+      if (babyId) {
+        url += `?babyId=${encodeURIComponent(babyId)}`;
+      }
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(episodeData),
       });
       if (!res.ok) throw new Error(`Failed to create episode: ${res.status}`);
       const episode = await res.json();
-      await get().fetchEpisodes();
+      await get().fetchEpisodes(babyId);
       useToastStore.getState().show('创建成功', 'success');
       return episode.id;
     } catch (error) {
@@ -95,15 +103,19 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
     }
   },
 
-  updateEpisode: async (id, updates) => {
+  updateEpisode: async (id, updates, babyId?: string) => {
     try {
-      const res = await fetch(`/api/illness/${id}`, {
+      let url = `/api/illness/${id}`;
+      if (babyId) {
+        url += `?babyId=${encodeURIComponent(babyId)}`;
+      }
+      const res = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error(`Failed to update episode: ${res.status}`);
-      await get().fetchEpisodes();
+      await get().fetchEpisodes(babyId);
       // Refresh currentEpisode if it's the one being updated
       const { currentEpisode } = get();
       if (currentEpisode?.id === id) {
@@ -117,14 +129,18 @@ export const useIllnessStore = create<IllnessStore>((set, get) => ({
     }
   },
 
-  deleteEpisode: async (id) => {
+  deleteEpisode: async (id, babyId?: string) => {
     if (!confirm('确定删除该生病事件？这将同时删除所有关联记录。')) {
       return;
     }
     try {
-      const res = await fetch(`/api/illness/${id}`, { method: 'DELETE' });
+      let url = `/api/illness/${id}`;
+      if (babyId) {
+        url += `?babyId=${encodeURIComponent(babyId)}`;
+      }
+      const res = await fetch(url, { method: 'DELETE' });
       if (!res.ok) throw new Error(`Failed to delete episode: ${res.status}`);
-      await get().fetchEpisodes();
+      await get().fetchEpisodes(babyId);
       useToastStore.getState().show('删除成功', 'success');
     } catch (error) {
       console.error('Failed to delete episode:', error);

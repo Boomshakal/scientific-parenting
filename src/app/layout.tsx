@@ -4,6 +4,14 @@ import { Header, BottomNav } from "@/components/layout/Header";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 
+// 环境变量校验
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error("Missing NEXTAUTH_SECRET environment variable");
+}
+if (!process.env.DATABASE_URL) {
+  throw new Error("Missing DATABASE_URL environment variable");
+}
+
 export const metadata: Metadata = {
   title: "育娃记录 - 记录成长每一刻",
   description: "科学育娃记录应用，记录宝宝的生长发育、饮食、睡眠、里程碑等重要时刻",

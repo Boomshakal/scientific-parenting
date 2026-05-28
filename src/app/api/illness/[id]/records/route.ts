@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import {
   getAuthenticatedUser,
-  getUserBaby,
   unauthorizedResponse,
 } from "@/lib/auth-helpers"
 
@@ -14,16 +13,21 @@ export async function GET(
     const user = await getAuthenticatedUser()
     if (!user) return unauthorizedResponse()
 
-    const baby = await getUserBaby(user.id)
-    if (!baby) return unauthorizedResponse()
-
     const resolvedParams = await params
+
+    // Find episode with its baby to verify ownership
+    const episode = await prisma.illnessEpisode.findFirst({
+      where: { id: resolvedParams.id },
+      include: { baby: true },
+    })
+
+    if (!episode || episode.baby.userId !== user.id) {
+      return NextResponse.json({ error: "Episode not found" }, { status: 404 })
+    }
+
     const records = await prisma.illnessRecord.findMany({
       where: {
         episodeId: resolvedParams.id,
-        episode: {
-          babyId: baby.id,
-        },
       },
       orderBy: { recorded_at: "desc" },
     })
@@ -52,21 +56,16 @@ export async function POST(
     const user = await getAuthenticatedUser()
     if (!user) return unauthorizedResponse()
 
-    const baby = await getUserBaby(user.id)
-    if (!baby) return unauthorizedResponse()
-
     const data = await _request.json()
     const resolvedParams = await params
 
-    // Verify episode exists and belongs to this baby
+    // Find episode with its baby to verify ownership
     const episode = await prisma.illnessEpisode.findFirst({
-      where: {
-        id: resolvedParams.id,
-        babyId: baby.id,
-      },
+      where: { id: resolvedParams.id },
+      include: { baby: true },
     })
 
-    if (!episode) {
+    if (!episode || episode.baby.userId !== user.id) {
       return NextResponse.json({ error: "Episode not found" }, { status: 404 })
     }
 

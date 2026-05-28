@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useMoodStore } from '@/stores';
+import { useBabyStore } from '@/stores';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, TextArea, Select } from '@/components/ui/Input';
@@ -12,10 +13,26 @@ import { format } from 'date-fns';
 
 export default function MoodPage() {
   const { records, loading, fetchRecords, addRecord, deleteRecord } = useMoodStore();
+  const { currentBabyId, fetchBaby } = useBabyStore();
 
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+    // Ensure we have the current baby selected, then fetch records for that baby
+    const init = async () => {
+      await fetchBaby();
+      const { currentBabyId } = useBabyStore.getState();
+      if (currentBabyId) {
+        await fetchRecords(currentBabyId);
+      }
+    };
+    init();
+  }, [fetchRecords, fetchBaby]);
+
+  // Re-fetch when currentBabyId changes (switching babies in settings)
+  useEffect(() => {
+    if (currentBabyId) {
+      fetchRecords(currentBabyId);
+    }
+  }, [currentBabyId, fetchRecords]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [time, setTime] = useState(format(new Date(), 'HH:mm'));
@@ -26,12 +43,16 @@ export default function MoodPage() {
   const todayMoods = todayRecords.map(r => r.mood);
 
   const handleSubmit = () => {
+    if (!currentBabyId) {
+      alert('请先选择宝宝');
+      return;
+    }
     addRecord({
       date,
       time,
       mood: mood as 'happy' | 'calm' | 'fussy' | 'crying',
       notes: notes || undefined,
-    });
+    }, currentBabyId);
     setIsModalOpen(false);
     resetForm();
   };
@@ -100,7 +121,7 @@ export default function MoodPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => deleteRecord(record.id)}
+                    onClick={() => currentBabyId && deleteRecord(record.id, currentBabyId)}
                     className="text-gray-300 hover:text-red-400 transition-colors p-2"
                   >
                     🗑️

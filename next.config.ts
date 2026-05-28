@@ -5,13 +5,17 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   assetPrefix: process.env.NODE_ENV === 'production' ? 'https://parenting.lhmsite.top:8443' : undefined,
   async headers() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const allowedOrigin = isProduction
+      ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://parenting.lhmsite.top:8443')
+      : 'http://localhost:3000';
     return [
       {
         source: '/(.*)',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: '*',
+            value: allowedOrigin,
           },
           {
             key: 'Access-Control-Allow-Methods',

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSleepStore } from '@/stores';
+import { useBabyStore } from '@/stores';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, TextArea, Select } from '@/components/ui/Input';
@@ -17,10 +18,26 @@ const qualityOptions = [
 
 export default function SleepPage() {
   const { records, loading, fetchRecords, addRecord, deleteRecord } = useSleepStore();
+  const { currentBabyId, fetchBaby } = useBabyStore();
 
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+    // Ensure we have the current baby selected, then fetch records for that baby
+    const init = async () => {
+      await fetchBaby();
+      const { currentBabyId } = useBabyStore.getState();
+      if (currentBabyId) {
+        await fetchRecords(currentBabyId);
+      }
+    };
+    init();
+  }, [fetchRecords, fetchBaby]);
+
+  // Re-fetch when currentBabyId changes (switching babies in settings)
+  useEffect(() => {
+    if (currentBabyId) {
+      fetchRecords(currentBabyId);
+    }
+  }, [currentBabyId, fetchRecords]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('20:00');
@@ -42,6 +59,10 @@ export default function SleepPage() {
   };
 
   const handleSubmit = () => {
+    if (!currentBabyId) {
+      alert('请先选择宝宝');
+      return;
+    }
     const duration = calculateDuration();
     addRecord({
       date,
@@ -50,7 +71,7 @@ export default function SleepPage() {
       duration,
       quality: quality as 'good' | 'normal' | 'bad',
       notes: notes || undefined,
-    });
+    }, currentBabyId);
     setIsModalOpen(false);
     resetForm();
   };
@@ -132,7 +153,7 @@ export default function SleepPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => deleteRecord(record.id)}
+                    onClick={() => currentBabyId && deleteRecord(record.id, currentBabyId)}
                     className="text-gray-300 hover:text-red-400 transition-colors p-2"
                   >
                     🗑️

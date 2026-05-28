@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useMilestoneStore } from '@/stores';
+import { useBabyStore } from '@/stores';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TextArea, Select } from '@/components/ui/Input';
@@ -12,10 +13,26 @@ import { format } from 'date-fns';
 
 export default function MilestonePage() {
   const { records: milestones, loading, fetchRecords: fetchMilestones, addRecord: addMilestone, deleteRecord: deleteMilestone } = useMilestoneStore();
+  const { currentBabyId, fetchBaby } = useBabyStore();
 
   useEffect(() => {
-    fetchMilestones();
-  }, [fetchMilestones]);
+    // Ensure we have the current baby selected, then fetch records for that baby
+    const init = async () => {
+      await fetchBaby();
+      const { currentBabyId } = useBabyStore.getState();
+      if (currentBabyId) {
+        await fetchMilestones(currentBabyId);
+      }
+    };
+    init();
+  }, [fetchMilestones, fetchBaby]);
+
+  // Re-fetch when currentBabyId changes (switching babies in settings)
+  useEffect(() => {
+    if (currentBabyId) {
+      fetchMilestones(currentBabyId);
+    }
+  }, [currentBabyId, fetchMilestones]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<string>(MILESTONE_TYPES[0].key);
   const [achievedDate, setAchievedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -24,11 +41,15 @@ export default function MilestonePage() {
   const achievedTypes = new Set(milestones.map(m => m.type));
 
   const handleSubmit = () => {
+    if (!currentBabyId) {
+      alert('请先选择宝宝');
+      return;
+    }
     addMilestone({
       type: selectedType,
       achievedDate,
       notes: notes || undefined,
-    });
+    }, currentBabyId);
     setIsModalOpen(false);
     resetForm();
   };
@@ -68,7 +89,10 @@ export default function MilestonePage() {
               return (
                 <div key={milestone.id} className="bg-green-50 rounded-2xl p-4 text-center border-2 border-green-200 relative group">
                   <button
-                    onClick={() => deleteMilestone(milestone.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      currentBabyId && deleteMilestone(milestone.id, currentBabyId);
+                    }}
                     className="absolute top-2 right-2 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                   >
                     ✕

@@ -23,13 +23,26 @@ export async function getUserBaby(userId: string) {
   })
 }
 
+export async function getBabies(userId: string) {
+  return prisma.baby.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+  })
+}
+
+export async function getBabyById(userId: string, babyId: string) {
+  return prisma.baby.findFirst({
+    where: { id: babyId, userId },
+  })
+}
+
 export async function getOrCreateUserBaby(userId: string) {
   let baby = await getUserBaby(userId)
   if (!baby) {
     baby = await prisma.baby.create({
       data: {
         name: "宝宝",
-        birthday: new Date().toISOString().split("T")[0],
+        birthday: new Date(),
         gender: "unknown",
         userId,
       },

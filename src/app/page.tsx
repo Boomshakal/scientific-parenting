@@ -17,7 +17,7 @@ const quickActions = [
 ];
 
 export default function HomePage() {
-  const { baby, loading: babyLoading, fetchBaby } = useBabyStore();
+  const { baby, loading: babyLoading, fetchBaby, currentBabyId } = useBabyStore();
   const { records: feedingRecords, loading: feedingLoading, fetchRecords: fetchFeeding } = useFeedingStore();
   const { records: sleepRecords, loading: sleepLoading, fetchRecords: fetchSleep } = useSleepStore();
   const { records: growthRecords, loading: growthLoading, fetchRecords: fetchGrowth } = useGrowthStore();
@@ -27,13 +27,30 @@ export default function HomePage() {
   const loading = babyLoading || feedingLoading || sleepLoading || growthLoading || milestoneLoading || educationLoading;
 
   useEffect(() => {
-    fetchBaby();
-    fetchFeeding();
-    fetchSleep();
-    fetchGrowth();
-    fetchMilestones();
-    fetchEducation();
+    const init = async () => {
+      await fetchBaby();
+      const { currentBabyId } = useBabyStore.getState();
+      if (currentBabyId) {
+        fetchFeeding(currentBabyId);
+        fetchSleep(currentBabyId);
+        fetchGrowth(currentBabyId);
+        fetchMilestones(currentBabyId);
+        fetchEducation(currentBabyId);
+      }
+    };
+    init();
   }, [fetchBaby, fetchFeeding, fetchSleep, fetchGrowth, fetchMilestones, fetchEducation]);
+
+  // Re-fetch when currentBabyId changes (switching babies in settings)
+  useEffect(() => {
+    if (currentBabyId) {
+      fetchFeeding(currentBabyId);
+      fetchSleep(currentBabyId);
+      fetchGrowth(currentBabyId);
+      fetchMilestones(currentBabyId);
+      fetchEducation(currentBabyId);
+    }
+  }, [currentBabyId, fetchFeeding, fetchSleep, fetchGrowth, fetchMilestones, fetchEducation]);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
